@@ -289,7 +289,7 @@ describe('CommentaryDriver long-term memory', () => {
     expect(payload.possessionNow).toEqual({ value: { 'Team A': 55, 'Team B': 45 }, agoS: 0 });
     expect(payload.memory).toHaveProperty('minutes');
     expect(payload.memory).not.toHaveProperty('lastKnownStats');
-    // Kimi is told which bank lines it used lately; nothing has been shown yet.
+    // Kimi is told what it said lately; nothing has been said yet.
     expect(payload.recent).toEqual([]);
   });
 
@@ -309,10 +309,9 @@ describe('CommentaryDriver long-term memory', () => {
 
     const system: string = req.messages[0].content;
     expect(system).toMatch(/momentum/);
-    // The system prompt carries the hardcoded line bank, and Kimi only picks from it.
-    expect(system).toMatch(/Bank, one row per line/);
-    expect(system).toContain('press_on | {T} are piling on the pressure. |');
-    expect(req.schema.schema.properties.picks.items.properties.id.enum).toContain('press_on');
+    // Kimi writes the sentence itself: one `say` plus up to two `next` follow-ups.
+    expect(system).toMatch(/ONE short sentence/);
+    expect(Object.keys(req.schema.schema.properties)).toEqual(['say', 'next', 'phase']);
     expect(req.maxCompletionTokens).toBe(300);
   });
 
@@ -393,11 +392,11 @@ describe('CommentaryDriver commentary tick', () => {
         freePlayer: { team: 'Team A', spaceM: 7.5 },
       },
     });
-    // The raw stat feed is withheld; the facts block is what Kimi matches the bank lines against.
+    // The raw stat feed is withheld; the facts block is what Kimi explains.
     expect(payload.memory).not.toHaveProperty('lastKnownStats');
     const system = (vi.mocked(llmCall).mock.calls[0]![1] as any).messages[0].content as string;
     expect(system).toMatch(/pressTrap\.onBall is the side being trapped/);
-    expect(system).toMatch(/use a line only when that fact, phase or trend is true right now/);
+    expect(system).toMatch(/Start from tactics\.facts/);
   });
 
   it('batches two follow-up lines and exposes them five seconds apart', async () => {
@@ -421,42 +420,35 @@ describe('CommentaryDriver commentary tick', () => {
     expect(messages().filter((m) => m.kind === 'line' && m.line.lane === 'watch').map((m) => m.line.text).slice(0, 3)).toEqual(['Line one', 'Line two', 'Line three']);
   });
 
-  it('shows hardcoded bank lines for Kimi\'s picks: first at once, the others five seconds apart, team words filled in', async () => {
-    controller.hud = { m: { jersey: { A: 'Red', B: 'Yellow' }, feed: [] } } as any;
+  it('tells Kimi what it said lately so it does not repeat itself', async () => {
     setScript({
       outcome: {
         status: 'ok', stamp: STAMP,
-        result: { ok: true, parsed: { picks: [{ id: 'press_on', team: 'A' }, { id: 'counter_go', team: 'B' }, { id: 'poss_keep', team: 'A' }], phase: 'press' }, timing: {} },
+        result: { ok: true, parsed: { say: 'Line one', next: ['Line two'], phase: 'settled' }, timing: {} },
       } as any,
     });
     const d = makeDriver();
     d.start();
 
-    const lines = () => messages().filter((m) => m.kind === 'line' && m.line.lane === 'watch').map((m) => m.line.text);
     await advance(600);
-    expect(lines()).toEqual(['Team Red are piling on the pressure.']);
-    await advance(5_000);
-    expect(lines()).toEqual(['Team Red are piling on the pressure.', 'Team Yellow are breaking at pace and Team Red are caught out of shape.']);
-    await advance(6_000);
-    expect(lines().slice(0, 3)).toEqual([
-      'Team Red are piling on the pressure.',
-      'Team Yellow are breaking at pace and Team Red are caught out of shape.',
-      'Team Red are keeping the ball and setting the tempo.',
-    ]);
+    await advance(11_000);
+    expect(llmCall).toHaveBeenCalledTimes(2);
+    const second = JSON.parse(userText(vi.mocked(llmCall).mock.calls[1]![1] as any));
+    expect(second.recent).toEqual(['Line one', 'Line two']);
   });
 
-  it('drops unknown ids, a bad team and repeats, and never shows text Kimi wrote itself', async () => {
+  it('scrubs player id tags and media talk from the sentences Kimi writes', async () => {
     setScript({
       outcome: {
         status: 'ok', stamp: STAMP,
-        result: { ok: true, parsed: { picks: [{ id: 'flayer_after_switch', team: 'A' }, { id: 'press_on', team: 'C' }, { id: 'press_on', team: 'A' }, { id: 'press_on', team: 'B' }], phase: 'press' }, timing: {} },
+        result: { ok: true, parsed: { say: 'The annotated image shows it. Team Red win the ball [[7]] back.', next: [], phase: 'press' }, timing: {} },
       } as any,
     });
     const d = makeDriver();
     d.start();
     await advance(600);
 
-    expect(messages().filter((m) => m.kind === 'line' && m.line.lane === 'watch').map((m) => m.line.text)).toEqual(['Team A are piling on the pressure.']);
+    expect(messages().filter((m) => m.kind === 'line' && m.line.lane === 'watch').map((m) => m.line.text)).toEqual(['Team Red win the ball back.']);
   });
 
   it('reports a missing Kimi model once and never calls the model', async () => {

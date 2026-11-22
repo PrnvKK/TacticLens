@@ -3,8 +3,8 @@
 // Why this exists: the director only speaks when it also shows a graphic (its `say` is optional and often
 // empty), so on its own the chat stays quiet. This lane asks Kimi for ONE short, plain-words sentence about
 // the mid-term picture (the last 30-90 seconds, from the match memory) every few seconds (sooner on a strong
-// rule event) and streams it into the chat. Ask grabs the current frame plus the tracking snapshot and streams
-// the answer into the same chat.
+// rule event), plus up to two follow-ups shown five seconds apart, and streams it into the chat. Ask grabs the
+// current frame plus the tracking snapshot and streams the answer into the same chat.
 //
 // Both lanes go through the background LLM host (keys never enter the page), so Kimi is the only model in play.
 // Every failure is surfaced in the chat as a muted note: the chat never sits on a typing bubble that will not resolve.
@@ -18,7 +18,6 @@ import { kimiModelId } from '../llm/model';
 import type { OverlayController } from '../render/controller';
 import type { MediaClock } from '../video';
 import { MatchMemory } from './memory';
-import { LINE_IDS, bankForPrompt, renderBankLine } from './line-bank';
 import { stripMediaTalk } from './media-talk';
 import { emptyMatch, type LiveSource } from './source';
 
@@ -30,8 +29,8 @@ const RETRY_ATTEMPTS = 3;
 const RETRY_BASE_MS = [700, 1800] as const;
 /** Output caps: reasoning tokens count against these, so the ask cap is generous. */
 const COMMENTARY_MAX_TOKENS = 300;
-/** How many recently shown bank lines Kimi is told to avoid (and the driver drops if it repeats one anyway). */
-const RECENT_PICKS = 8;
+/** How many recently said lines Kimi is shown so it does not repeat itself. */
+const RECENT_LINES = 6;
 const ASK_MAX_TOKENS = 600;
 const ASK_RETRY_MAX_TOKENS = 800;
 
@@ -51,36 +50,28 @@ const SCHEMA = {
   },
 } as const;
 
-/** Commentary picks one to three lines from the hardcoded bank: the first shows at once, the rest five seconds apart. */
+/** Commentary writes one short sentence plus up to two follow-ups: `say` shows at once, `next` five seconds apart. */
 const COMMENTARY_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['picks', 'phase'],
+  required: ['say', 'next', 'phase'],
   properties: {
-    picks: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['id', 'team'],
-        properties: { id: { type: 'string', enum: [...LINE_IDS] }, team: { type: 'string', enum: ['A', 'B'] } },
-      },
-    },
+    say: { type: 'string' },
+    next: { type: 'array', items: { type: 'string' } },
     phase: { type: 'string', enum: [...PHASES] },
   },
 } as const;
 
-const COMMENTARY_SYSTEM = `You are the director of the live commentary for a football match. You do not write sentences: you choose them from the fixed bank below.
-Your input is a short digest of the last few minutes: scout (the two teams, A and B, as "Team <colour>"), possessionNow, tactics (formations, attack direction and tactics.facts, the rule facts that are true right now), memory (per-minute rows where momentum is signed toward the first team in memory.teams, plus phases) and recent (bank ids already shown lately).
-Reply with JSON {"picks": [{"id": string, "team": "A" | "B"}], "phase": string}.
-- picks: one to three lines from the bank, best fit first. id is a bank id. team is the side the line is about, the {T} in the text; the other side becomes {O}. The first pick shows at once, the others about five seconds later.
-- Match each line to the digest with its "when" column: use a line only when that fact, phase or trend is true right now, and set team as the "when" column says. In tactics.facts, overload.team has the extra attackers, pressTrap.onBall is the side being trapped (so the pressers are the OTHER team), freePlayer.team has the spare man, passingLane.team has the open options, switchArc.team and counterRun.team are the attackers, possessionSwing.team is gaining the ball.
-- When tactics.facts is empty or nothing stands out, use a calm line that fits the phase or possession (poss_keep, probe, build_back, midfield). Always pick at least one line.
-- Never pick an id listed in recent. Use a different id for each pick and prefer variety over repeating one theme.
+const COMMENTARY_SYSTEM = `You are the live commentator for a football match, talking to a casual fan.
+Your input is a short digest of the last few minutes: scout (the two teams, A and B, as "Team <colour>"), possessionNow, tactics (formations, attack direction and tactics.facts, the rule facts that are true right now), memory (per-minute rows where momentum is signed toward the first team in memory.teams, plus phases) and recent (what you already said).
+Reply with JSON {"say": string, "next": string[], "phase": string}.
+- say: ONE short sentence, at most 16 words, about what is happening right now, in plain words.
+- next: zero to two more short sentences, each from a different angle; they are shown about five seconds after say.
+- Start from tactics.facts and say why the play looks the way it does: overload.team has the extra attackers, pressTrap.onBall is the side being trapped (so the pressers are the OTHER team), freePlayer.team has the spare man, passingLane.team has the open options, switchArc.team and counterRun.team are the attackers, possessionSwing.team is gaining the ball. When tactics.facts is empty, comment on the phase, the possession or the momentum trend.
+- Refer to teams ONLY as "Team <colour>", exactly as written in scout.A and scout.B; never club names or the letters A or B. Refer to players only by position or area ("Team Yellow's right back", "down Team Orange's left"); never write player ids, [[...]] tags, shirt numbers or names.
+- Never invent scores, numbers or facts that are not in the digest. Do not repeat or rephrase anything in recent; vary the theme.
+- Sound like a live commentator: never mention any picture, frame, image, annotation, tracker, data, payload, JSON, memory or tool.
 - phase is one of build_up, press, transition, settled, set_piece, none.
-
-Bank, one row per line: id | text | when
-${bankForPrompt()}
 
 Everything after this line is a background glossary, kept only so repeat calls reuse the cached prefix. Ignore it.`;
 
@@ -109,7 +100,7 @@ export interface CommentaryOpts {
   preset: PresetId;
   /** Popup setting for the Kimi model id (CEREBRAS_KIMI_MODEL). */
   kimiModel?: string;
-  /** Gap between model calls, ms (default 10000). Each call picks up to three lines, shown five seconds apart. */
+  /** Gap between model calls, ms (default 10000). Each call returns up to three sentences, shown five seconds apart. */
   everyMs?: number;
   /** The director's shared token budget: commentary and ask run on its "analyst" lane, so every lane sees one rolling 60 s window. */
   budget?: BudgetGovernor;
@@ -159,8 +150,6 @@ export class CommentaryDriver {
   private busy = false;
   private n = 0;
   private said: string[] = [];
-  /** Bank ids shown lately (newest last): sent to Kimi as "recent" and used to drop an accidental repeat. */
-  private recentIds: string[] = [];
   private lastCallAt = 0;
   /** Follow-up lines from the current call, exposed at 5 s intervals. */
   private queued: KimiLine[] = [];
@@ -322,7 +311,7 @@ export class CommentaryDriver {
   private commentaryPayload(f: FrameState): object {
     const j = this.jerseyNames();
     const m = this.memory.toPayload(f.t, { maxChars: 1000 });
-    // Kimi only picks a bank line, so it needs the facts, the recent trend and what it already used: no raw stat feed.
+    // Kimi needs the facts, the recent trend and what it already said: no raw stat feed.
     const minutes = m.minutes.slice(-3).map((row) => {
       const out = { ...row };
       delete out.pressure;
@@ -338,7 +327,7 @@ export class CommentaryDriver {
         minutes,
         ...(m.phases ? { phases: m.phases } : {}),
       },
-      recent: this.recentIds,
+      recent: this.said.slice(-RECENT_LINES),
     };
   }
 
@@ -390,7 +379,7 @@ export class CommentaryDriver {
     const events = this.o.source.measure.recent.filter((e) => f.t - e.t <= 10).slice(-6)
       .map((e) => ({ type: e.type, t: Math.round(e.t * 10) / 10, team: e.team, conf: Math.round(e.confidence * 100) / 100, ...e.detail }));
     // Teams are called by jersey colour everywhere (chat chips use the same words): hand Kimi "Team Red", not club names.
-    // Kit hexes come from the same common colour setting, so a hardcoded demo clip wins here too.
+    // Kit hexes come from the same measured colour setting as the overlay.
     const j = this.jerseyNames();
     const kit = this.o.controller.teamColours;
     const named = base.scout
@@ -477,13 +466,11 @@ export class CommentaryDriver {
     }
     const stamp = outcome.stamp ?? toStamp(outcome.result.timing);
     ctl.message({ kind: 'call', ms: stamp.totalMs, lane });
-    const p = outcome.result.parsed as { say?: unknown; next?: unknown; picks?: unknown; phase?: unknown } | undefined;
-    // Commentary replies with bank picks and the text comes from the hardcoded bank; ask (and the mock) still reply with a say string.
-    const banked = Array.isArray(p?.picks) ? this.bankLines(p!.picks) : null;
+    const p = outcome.result.parsed as { say?: unknown; next?: unknown; phase?: unknown } | undefined;
     // A reply cut off by the token cap has no parsed JSON: the say string may still be in the raw text.
-    const say = banked ? (banked[0] ?? '') : this.scrub(typeof p?.say === 'string' ? p.say : sayFromRaw(outcome.result.text));
+    const say = this.scrub(typeof p?.say === 'string' ? p.say : sayFromRaw(outcome.result.text));
     const phase = (PHASES as readonly string[]).includes(String(p?.phase)) ? (p!.phase as KimiLine['phase']) : 'none';
-    const next = banked ? banked.slice(1, 3) : Array.isArray(p?.next) ? p!.next.slice(0, 2) : [];
+    const next = Array.isArray(p?.next) ? p!.next.slice(0, 2) : [];
     const extras = next
       .map((v, i) => ({ text: typeof v === 'string' ? this.scrub(v) : '', id: `${id}-${i + 2}` }))
       .filter((v) => v.text)
@@ -494,27 +481,6 @@ export class CommentaryDriver {
     if (say) this.memory.addSaid({ id, text: say, t: snapshotT, phase, by });
     for (const line of extras) this.memory.addSaid({ id: line.id, text: line.text, t: snapshotT, phase: line.phase, by });
     return { ok: true, aborted: false, say, extras };
-  }
-
-  /**
-   * Turn Kimi's picks into chat text from the hardcoded bank. Unknown ids, a bad team, a repeat of a recently
-   * shown line and a repeat inside the same reply are dropped, so what reaches the chat is always a clean bank line.
-   */
-  private bankLines(picks: unknown[]): string[] {
-    const j = this.jerseyNames();
-    const names = { A: `Team ${j.A}`, B: `Team ${j.B}` };
-    const out: string[] = [];
-    for (const raw of picks) {
-      const pick = raw as { id?: unknown; team?: unknown } | null;
-      if (!pick || typeof pick.id !== 'string' || (pick.team !== 'A' && pick.team !== 'B')) continue;
-      if (this.recentIds.includes(pick.id)) continue;
-      const text = renderBankLine(pick.id, pick.team, names);
-      if (!text) continue;
-      this.recentIds.push(pick.id);
-      out.push(text);
-    }
-    this.recentIds = this.recentIds.slice(-RECENT_PICKS);
-    return out;
   }
 
   /** A muted chat note, at most once per 30 s per id so a failing lane cannot flood the chat. */
