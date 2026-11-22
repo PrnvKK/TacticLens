@@ -36,7 +36,7 @@ export interface StateBuildOpts {
   halfTime?: boolean;
   /** Jersey-colour labels per side ("Team Red", "Team Yellow"), carried to the bridge so Telegram never says Team A/B. */
   teamLabels?: { A: string; B: string };
-  /** Resolved kit colours from the common colour setting (hardcoded clip first, then measurement). */
+  /** Resolved kit colours from the common colour setting (measured kit colours). */
   teamColours?: { A: string; B: string } | null;
   /** Latest final side-chat line; the bridge forwards it as the 10 s Telegram ping. */
   commentary?: { text: string; t: number } | null;

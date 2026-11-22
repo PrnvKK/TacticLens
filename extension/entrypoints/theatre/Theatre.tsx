@@ -353,8 +353,6 @@ export function Theatre(): JSX.Element {
   const showSpeed = !(mock && SPEED_VIEW == null);
   const compactSpeed = SPEED_VIEW == null || SPEED_VIEW === 'compact';
   const landing = !clock;
-  /** Only the real live video uses clip colour presets; the mock/showcase feeds carry their own colours. */
-  const colourSourceName = !mock && !showcase && !speedOnly ? fileName : undefined;
 
   const onDrop = (e: DragEvent): void => {
     e.preventDefault(); setDrag(false);
@@ -425,7 +423,6 @@ export function Theatre(): JSX.Element {
                   guide even when the picture is letterboxed; the full wall / race / burst views keep the pane-wide layer. */}
               <Stage
                 clock={clock} video={showcase ? null : video} showcase={showcase || bigHud} hudVariant="feed"
-                sourceName={colourSourceName}
                 mockPhase={showcase ? showcasePhase : undefined} onController={setCtl} onCut={handleCut}
                 overlay={showSpeed && compactSpeed ? <SpeedDemo store={theatreSpeed} hideControls={chromeHidden} showStats={perf} /> : undefined}
               />
@@ -435,7 +432,7 @@ export function Theatre(): JSX.Element {
             </div>
             {race && (
               <div class="th-pane">
-                <Stage clock={clock} video={video2} showcase={showcase || bigHud} hudVariant="feed" sourceName={colourSourceName} onController={setCtl2} />
+                <Stage clock={clock} video={video2} showcase={showcase || bigHud} hudVariant="feed" onController={setCtl2} />
               </div>
             )}
           </div>

@@ -11,8 +11,6 @@ export interface ControllerOpts {
   /** Gallery cells: do not turn a frozen clock into the PAUSED state. */
   ignorePause?: boolean;
   onAsk?: (q: string) => void;
-  /** Video filename/URL: selects a hardcoded clip colour table when it matches, else perception wins. */
-  sourceName?: string | null;
 }
 
 export class OverlayController implements SourceSink {
@@ -36,7 +34,6 @@ export class OverlayController implements SourceSink {
   constructor(canvas: HTMLCanvasElement, clock: EngineClock, opts: ControllerOpts = {}) {
     this.clock = clock;
     this.opts = opts;
-    this.colours.setSource(opts.sourceName ?? null);
     this.engine = new OverlayEngine(canvas, clock);
     this.hud = new HudStore();
     // Dev/verification: ?players=all keeps the old every-player layer for comparison.
@@ -53,19 +50,10 @@ export class OverlayController implements SourceSink {
 
   dispose(): void { this.hud.dispose(); }
 
-  /** Change the source identity without rebuilding the controller (a new clip resets the colour blend). */
-  setSourceName(name: string | null | undefined): void {
-    const next = name ?? null;
-    if (this.colours.source === next) return;
-    this.colours.setSource(next);
-    this.kit.reset();
-    this.lastColour = null;
-  }
-
-  /** The last resolved colour setting; clip overrides are visible here before the HUD has repainted. */
+  /** The last resolved colour setting. */
   get colourSetting(): ColourSetting | null { return this.lastColour; }
 
-  /** Raw kit colours for prompts/frames/bridge; hardcoded clip values already applied. */
+  /** Raw measured kit colours for prompts/frames/bridge. */
   get teamColours(): { A: string; B: string } | null {
     return this.lastColour ? { A: this.lastColour.raw.A, B: this.lastColour.raw.B } : null;
   }
@@ -79,9 +67,9 @@ export class OverlayController implements SourceSink {
     return k ? { A: k.A.fill, B: k.B.fill } : null;
   }
 
-  /** Colour words shared by the HUD, Kimi prompts and Telegram; clip labels win, else the HUD's words. */
+  /** Colour words shared by the HUD, Kimi prompts and Telegram, derived from the display kit. */
   get jerseyNames(): { A: string; B: string } {
-    return this.lastColour?.names ?? this.hud.m.jersey;
+    return this.hud.m.jersey;
   }
 
   /** "Team White" / "Team Blue" style labels for the bridge and Telegram. */
@@ -100,8 +88,8 @@ export class OverlayController implements SourceSink {
       if (!this.ballVisibleSince) this.ballVisibleSince = now;
       if (this.ballOut && now - this.ballVisibleSince >= RULES.ballBackAfter) this.ballOut = false;
     } else this.ballVisibleSince = 0;
-    // One common colour setting: a known clip's hardcoded kit wins; otherwise the measured pair does.
-    // The scorebug read is only a fallback when the teams fit has nothing.
+    // One common colour setting: the measured kit pair. The scorebug read is only a fallback when the
+    // teams fit has nothing.
     this.lastColour = this.colours.resolve(s.teamColours, s.match.scout?.kitColours ?? null);
     const raw = this.lastColour
       ? { A: this.lastColour.raw.A, B: this.lastColour.raw.B, confidence: this.lastColour.confidence }
@@ -110,7 +98,7 @@ export class OverlayController implements SourceSink {
       ?? (s.match.scout ? displayKitPair(s.match.scout.kitColours.A, s.match.scout.kitColours.B) : null);
     if (kits) {
       this.engine.setKit(kits.A.fill, kits.B.fill, kits.A.edge, kits.B.edge);
-      this.hud.setKit(kits.A.fill, kits.B.fill, kits.A.edge, kits.B.edge, this.lastColour?.names ?? undefined);
+      this.hud.setKit(kits.A.fill, kits.B.fill, kits.A.edge, kits.B.edge);
     }
     this.engine.setSnapshot(s, now);
     this.hud.setSnapshot(s, now);

@@ -18,8 +18,6 @@ export interface StageProps {
   /** Real video element, or omit for the synthetic stadium feed. */
   video?: HTMLVideoElement | null;
   controllerOpts?: ControllerOpts;
-  /** Video filename/URL: picks the hardcoded colour table for a known demo clip. */
-  sourceName?: string | null;
   forceTier?: 'full' | 'mid' | 'narrow';
   showcase?: boolean;
   /** Review surfaces (the gallery) render many stages: never let one cell downgrade the page. */
@@ -55,10 +53,7 @@ export function Stage(props: StageProps): JSX.Element {
     initGlass();
     const canvas = canvasRef.current, slot = slotRef.current;
     if (!canvas || !slot) return;
-    const c = new OverlayController(canvas, props.clock, {
-      ...props.controllerOpts,
-      sourceName: props.sourceName ?? props.controllerOpts?.sourceName,
-    });
+    const c = new OverlayController(canvas, props.clock, props.controllerOpts);
     if (props.forceTier) c.forcedTier = props.forceTier;
     setCtl(c);
     (window as unknown as { __tl?: OverlayController[] }).__tl = [...((window as unknown as { __tl?: OverlayController[] }).__tl ?? []), c]; // debug handle
@@ -67,11 +62,6 @@ export function Stage(props: StageProps): JSX.Element {
     // controller is created once per mounted stage
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.clock]);
-
-  // A mode/file change can keep the same clock (for example live video -> mock), so re-bind the clip preset.
-  useEffect(() => {
-    ctl?.setSourceName(props.sourceName ?? null);
-  }, [ctl, props.sourceName]);
 
   // media element mounting
   useEffect(() => {
