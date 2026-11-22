@@ -1,0 +1,4 @@
+# Keep line endings identical on every platform (fixtures are compared byte for byte by the tests)
+* text=auto eol=lf
+*.png binary
+*.woff2 binary
