@@ -44,7 +44,7 @@ TacticLens does not stop at the screen. A small local bridge (`tools/bridge`, lo
 - **Telegram can draw on the screen.** The agent can request a graphic with `request_graphic`; it only appears in the Theatre after the same validator and calm gate as the on-screen director.
 - **Let OpenClaw write the pings.** `BRIDGE_PING_MODE=agent` makes OpenClaw write every proactive update instead of mirroring the screen.
 
-To try it: put `BRIDGE_TOKEN`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env`, rebuild the extension, run `pnpm bridge`, then tick "Telegram live bridge" in the toolbar popup (or open the Theatre with `?bridge=1`) and play a clip. The OpenClaw side (Telegram pairing, MCP server registration, inbound webhook) is described in `tools/bridge/README.md`. `pnpm bridge:dry` replays a recorded session through the analyst prompt on Cerebras without Telegram or OpenClaw, to check the wiring (needs `CEREBRAS_API_KEY` and `CEREBRAS_KIMI_MODEL`).
+To try it: put `BRIDGE_TOKEN`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env`, rebuild the extension, run `pnpm bridge`, then tick "Telegram live bridge" in the toolbar popup (or open the Theatre with `?bridge=1`) and play a clip. The OpenClaw side is in `openclaw/`: `openclaw/README.md` is the full setup guide (install, Telegram pairing, env, MCP registration, webhook, troubleshooting), `openclaw/openclaw.json5` is the config template to merge into `~/.openclaw/openclaw.json`, and `openclaw/skills/tacticlens-analyst/SKILL.md` is the analyst skill that tells the agent how to write updates and answer questions. `pnpm bridge:dry` replays a recorded session through the analyst prompt on Cerebras without Telegram or OpenClaw, to check the wiring (needs `CEREBRAS_API_KEY` and `CEREBRAS_KIMI_MODEL`).
 
 The bridge exposes only the match state and the snapshot you choose to send: enable it only when you are comfortable sending that frame to your model and your Telegram chat.
 
@@ -110,6 +110,7 @@ The toolbar's "Toggle overlay on this tab" button puts a status badge on a page'
 | `models/` | Export script, requirements and notes for the ONNX models. |
 | `tools/replay/` | Replay a session through the engine (`pnpm replay`, `pnpm replay:gen`). |
 | `tools/bridge/` | Local hub that pings Telegram and serves the match to the OpenClaw analyst over MCP (`pnpm bridge`, `pnpm bridge:dry`). |
+| `openclaw/` | OpenClaw setup guide, config template and the `tacticlens-analyst` skill. |
 | `tools/llm/`, `tools/director-live.ts` | Kimi calibration and soak scripts (`pnpm llm:calibrate`, `pnpm llm:soak`) and a live director smoke test (`pnpm director:live`). They make real API calls and need `CEREBRAS_API_KEY` and `CEREBRAS_KIMI_MODEL` in `.env`. |
 
 ## Models and licences

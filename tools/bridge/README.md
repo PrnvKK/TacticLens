@@ -62,3 +62,5 @@ OpenClaw runs separately and does not read this repo's `.env`; give it the same 
 5. Optional: `BRIDGE_PING_MODE=agent` makes OpenClaw write each proactive update instead of mirroring the screen.
 
 Then message the bot a question while a clip plays; the agent answers from the live tools.
+
+The full walkthrough, with the config template and the analyst skill, is in `openclaw/` at the repo root.

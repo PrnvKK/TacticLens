@@ -1,0 +1,61 @@
+// TacticLens on Telegram: OpenClaw config template.
+// Merge this into ~/.openclaw/openclaw.json (OpenClaw parses JSON5).
+// Secrets are env references only. Put the real values in ~/.openclaw/.env (600) or the Gateway service env.
+{
+  agents: {
+    defaults: {
+      // Replace with your Kimi id when CEREBRAS_KIMI_MODEL is set, e.g. "cerebras/kimi-k2".
+      // The bridge and extension use the same env var; this template uses the documented fallback.
+      model: { primary: "cerebras/gpt-oss-120b" },
+    },
+  },
+
+  models: {
+    mode: "merge",
+    providers: {
+      cerebras: {
+        baseUrl: "https://api.cerebras.ai/v1",
+        apiKey: "${CEREBRAS_API_KEY}",
+        api: "openai-completions",
+        models: [],
+      },
+    },
+  },
+
+  channels: {
+    telegram: {
+      enabled: true,
+      // TELEGRAM_BOT_TOKEN is the documented env fallback for the default account.
+      dmPolicy: "pairing",
+      // After pairing, restrict DMs to your own Telegram user id.
+      allowFrom: ["<YOUR_TELEGRAM_USER_ID>"],
+    },
+  },
+
+  hooks: {
+    enabled: true,
+    // Dedicated hook secret, not the Gateway auth token. The bridge sends it as a Bearer token.
+    token: "${OPENCLAW_HOOK_TOKEN}",
+    path: "/hooks",
+    allowedAgentIds: ["main"],
+    allowRequestSessionKey: false,
+  },
+
+  mcp: {
+    servers: {
+      tacticlens: {
+        url: "http://127.0.0.1:8787/mcp",
+        transport: "streamable-http",
+        enabled: true,
+        connectionTimeoutMs: 5000,
+        requestTimeoutMs: 20000,
+        headers: {
+          // Same BRIDGE_TOKEN the extension build uses.
+          Authorization: "Bearer ${BRIDGE_TOKEN}",
+        },
+      },
+    },
+  },
+
+  // Tool policy stays at OpenClaw defaults; the tacticlens server is still subject to tools.* policy.
+}
