@@ -1,0 +1,25 @@
+{
+  "name": "extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TacticLens Chrome MV3 extension (WXT + Preact)",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "test": "vitest run",
+    "typecheck": "wxt prepare && tsc --noEmit"
+  },
+  "dependencies": {
+    "@tacticlens/core": "workspace:*",
+    "onnxruntime-web": "1.24.3",
+    "preact": "^11.2.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0",
+    "wxt": "^0.21.5"
+  }
+}

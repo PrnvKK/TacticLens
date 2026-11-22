@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>TacticLens</title>
+    <meta name="manifest.type" content="browser_action" />
+    <style>
+      body { font: 13px system-ui, sans-serif; width: 300px; margin: 0; padding: 12px; color: #eee; background: #14161a; }
+      h1 { font-size: 14px; margin: 0 0 8px; }
+      label { display: block; margin: 8px 0 2px; color: #9aa; font-size: 11px; }
+      input, select, button { width: 100%; box-sizing: border-box; padding: 6px; background: #1d2026; color: #eee; border: 1px solid #333; border-radius: 4px; }
+      button { cursor: pointer; margin-top: 8px; }
+      small { color: #8a9; display: block; margin-top: 8px; line-height: 1.35; }
+      label.check { display: flex; align-items: center; gap: 6px; margin-top: 12px; color: #eee; font-size: 13px; }
+      label.check input { width: auto; margin: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>TacticLens</h1>
+    <button id="toggle">Toggle overlay on this tab</button>
+    <label for="preset">Kimi provider</label>
+    <select id="preset"></select>
+    <label for="race">Race against (optional)</label>
+    <select id="race"></select>
+    <div id="mockRow">
+      <label for="mockProfile">Mock speed (?mock=1 only)</label>
+      <select id="mockProfile"><option value="cerebras">Cerebras-like</option><option value="gpu">GPU-like</option></select>
+    </div>
+    <label for="kimiModel">Kimi model id (CEREBRAS_KIMI_MODEL)</label>
+    <input id="kimiModel" type="text" placeholder="required: set CEREBRAS_KIMI_MODEL" autocomplete="off" />
+    <label for="key">API key for selected provider</label>
+    <input id="key" type="password" placeholder="stored locally; never sent to pages" autocomplete="off" />
+    <button id="save">Save key</button>
+    <small id="gpuInfo"></small>
+    <label class="check" for="bridge"><input id="bridge" type="checkbox" /> Telegram live bridge</label>
+    <small id="status"></small>
+    <small>When frames are analysed, video frames are sent to the selected provider. Nothing else leaves this machine.</small>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
