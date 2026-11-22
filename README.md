@@ -1,12 +1,24 @@
 # TacticLens
 
-A live tactical overlay for football video, with an analyst that texts you. A Chrome (MV3) extension tracks the players and the ball, works out possession, formations and pass options, and draws them over the match together with short analyst cards. Detection runs locally in the browser (YOLO models through onnxruntime-web on WebGPU); the commentary is written by Kimi through the Cerebras API. While you watch, TacticLens also pings you on Telegram with the live read, and an OpenClaw analyst agent (Kimi on Cerebras) answers your questions there. Built for the Cerebras x Kimi x OpenClaw 2026 hackathon.
+A live tactical overlay for football video, with an analyst that texts you. A Chrome (MV3) extension tracks the players and the ball, works out possession, formations and pass options, and draws them over the match together with short analyst cards. Detection runs locally in the browser (YOLO models through onnxruntime-web on WebGPU); the commentary is written by Kimi through the Cerebras API. Kimi is the director: the code measures the match and hands Kimi a menu of what is true right now, and Kimi decides what goes on screen and what gets said. While you watch, TacticLens also pings you on Telegram with the live read, and an OpenClaw analyst agent (Kimi on Cerebras) answers your questions there. Built for the Cerebras x Kimi x OpenClaw 2026 hackathon.
 
 ## Screenshots
 
 ![Theatre page with the tactical overlay](assets/theatre-overlay.png)
 
 ![Theatre page with the live commentary side chat](assets/theatre-commentary.png)
+
+## Kimi directs, the code measures
+
+The project is split on purpose: the code collects data, Kimi makes the editorial decisions.
+
+| The code (deterministic, in `core/` and the brain page) | Kimi (on Cerebras) |
+|---|---|
+| Detects and tracks players and the ball, assigns teams, classifies the shot, computes possession, events and match statistics behind confidence gates. | Decides which graphic goes on screen, on whom, when and for how long: every decision is `show`, `hide`, `keep` or `none`, with a short caption and an optional line. |
+| Turns those measurements into rule facts (an overload, a press trap, a free man, a passing lane, a switch of play) and builds the **menu**: only the graphics whose facts are valid right now. | Chooses from that menu only, and may quote only numbers that are in the data it was given. It never invents a graphic, a player or a fact. |
+| Validates every decision: anything not on the menu, stale, repeated, or during a replay or close-up is rejected. The renderer admits one graphic at a time. | Writes the live commentary (a sentence plus follow-ups) and answers viewer questions about the match, on screen and on Telegram. |
+
+Kimi never touches video or draws anything itself: it turns things on and off by choosing from what the code offers. Two things are rule-driven, not Kimi's: the stat cards (computed and shown by `core/`, rotating behind the confidence gates) and the next-pass call in the HUD (the rules pick the best passing option and resolve it from the engine's pass events). A rules safety net (`core/src/director/fallback.ts`) also puts one valid graphic from the same menu on screen when Kimi has left it empty for about 8 seconds; it never bypasses the menu or invents a fact.
 
 ## How it works
 
