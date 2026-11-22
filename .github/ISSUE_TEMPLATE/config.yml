@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup and reproduction guide
+    url: https://github.com/PrnvKK/TacticLens#reproduce
+    about: Install pnpm, run the tests and replay tools, export the models, and load the extension.
+  - name: OpenClaw analyst setup
+    url: https://github.com/PrnvKK/TacticLens/blob/main/openclaw/README.md
+    about: Telegram pairing, MCP registration, webhook and troubleshooting for the analyst.
+  - name: Security report
+    url: https://github.com/PrnvKK/TacticLens/security
+    about: Report a vulnerability privately instead of opening a public issue.

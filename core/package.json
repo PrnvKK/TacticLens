@@ -1,9 +1,15 @@
 {
   "name": "@tacticlens/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Pure TypeScript tactical engine: tracking, teams, scene, engine, director, LLM contracts. No DOM.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PrnvKK/TacticLens.git",
+    "directory": "core"
+  },
   "exports": {
     ".": "./src/index.ts"
   },

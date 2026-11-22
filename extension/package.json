@@ -1,9 +1,15 @@
 {
   "name": "extension",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "TacticLens Chrome MV3 extension (WXT + Preact)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PrnvKK/TacticLens.git",
+    "directory": "extension"
+  },
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",

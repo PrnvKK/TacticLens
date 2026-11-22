@@ -1,8 +1,38 @@
 {
   "name": "tacticlens",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "TacticLens: live tactical overlay for football video, as a Chrome MV3 extension",
+  "license": "MIT",
+  "author": "PrnvKK (https://github.com/PrnvKK)",
+  "homepage": "https://github.com/PrnvKK/TacticLens#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PrnvKK/TacticLens.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PrnvKK/TacticLens/issues"
+  },
+  "keywords": [
+    "football",
+    "soccer",
+    "sports-analytics",
+    "computer-vision",
+    "chrome-extension",
+    "manifest-v3",
+    "yolo",
+    "onnxruntime",
+    "webgpu",
+    "typescript",
+    "preact",
+    "llm",
+    "kimi",
+    "cerebras",
+    "openclaw",
+    "telegram",
+    "mcp",
+    "hackathon"
+  ],
   "engines": {
     "node": ">=22"
   },

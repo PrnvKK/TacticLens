@@ -1,0 +1,92 @@
+name: Bug report
+description: Something in the overlay, engine, bridge or extension is not working.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please do not include API keys, bot tokens,
+        Telegram chat IDs, or private match footage. For security issues, use
+        the Security tab instead of a public issue.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected instead.
+      placeholder: The possession card stays on 0% after the first pass...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Build the extension and open the Theatre page
+        2. Choose a broadcast clip
+        3. Start playback and wait for the first pass
+        4. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Overlay / Theatre page
+        - Detection, tracking or teams
+        - Engine (possession, events, formations)
+        - Kimi director or commentary
+        - Telegram bridge
+        - OpenClaw analyst / MCP
+        - Model export or build
+        - Replay or fixtures
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Release tag or the output of `git rev-parse --short HEAD`.
+      placeholder: v0.1.0 / cfd9c93
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node and pnpm versions, and Chrome version.
+      placeholder: Windows 11, Node 24, pnpm 12.18, Chrome 143
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Video source
+      options:
+        - Broadcast
+        - Game
+        - Auto
+        - Offline demo
+        - Not applicable
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output or logs
+      description: Paste relevant browser console output or terminal logs with secrets redacted.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I removed API keys, tokens, chat IDs and private footage from this report.
+          required: true
+        - label: I searched existing issues for the same problem.
+          required: true

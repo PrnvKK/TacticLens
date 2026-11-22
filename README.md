@@ -1,5 +1,10 @@
 # TacticLens
 
+[![License: MIT](https://img.shields.io/github/license/PrnvKK/TacticLens?color=yellow)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/PrnvKK/TacticLens?display_name=tag)](https://github.com/PrnvKK/TacticLens/releases)
+[![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-4285F4?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
+[![Node 22+](https://img.shields.io/badge/Node-22%2B-5FA04E?logo=nodedotjs&logoColor=white)](package.json)
+
 A live tactical overlay for football video, with an analyst that texts you. A Chrome (MV3) extension tracks the players and the ball, works out possession, formations and pass options, and draws them over the match together with short analyst cards. Detection runs locally in the browser (YOLO models through onnxruntime-web on WebGPU); the commentary is written by Kimi through the Cerebras API. Kimi is the director: the code measures the match and hands Kimi a menu of what is true right now, and Kimi decides what goes on screen and what gets said. While you watch, TacticLens also pings you on Telegram with the live read, and an OpenClaw analyst agent (Kimi on Cerebras) answers your questions there. Built for the Cerebras x Kimi x OpenClaw 2026 hackathon.
 
 ## Screenshots
@@ -113,6 +118,14 @@ The toolbar's "Toggle overlay on this tab" button puts a status badge on a page'
 | `openclaw/` | OpenClaw setup guide, config template and the `tacticlens-analyst` skill. |
 | `tools/llm/`, `tools/director-live.ts` | Kimi calibration and soak scripts (`pnpm llm:calibrate`, `pnpm llm:soak`) and a live director smoke test (`pnpm director:live`). They make real API calls and need `CEREBRAS_API_KEY` and `CEREBRAS_KIMI_MODEL` in `.env`. |
 
-## Models and licences
+## Licence
+
+TacticLens source code is released under the [MIT License](LICENSE): you may
+use, modify and redistribute it with attribution. The pretrained detector
+weights are not part of this repository and keep their own terms, described
+below. The bundled fonts are under the SIL Open Font License, with their
+licence texts in `extension/public/fonts/`.
+
+## Models and third-party licences
 
 The detectors are third-party pretrained weights, not included in this repo and downloaded by `models/export_onnx.py`. They derive from Ultralytics YOLO, so treat them as AGPL-3.0, and some source repositories state no licence. Check the terms before redistributing the weights or the built extension. Sources and notes are in `models/README.md`.

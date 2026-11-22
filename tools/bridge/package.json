@@ -1,9 +1,15 @@
 {
   "name": "@tacticlens/bridge",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Local TacticLens -> OpenClaw state, snapshot and MCP bridge",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PrnvKK/TacticLens.git",
+    "directory": "tools/bridge"
+  },
   "scripts": {
     "start": "node --no-warnings --experimental-transform-types --import ../replay/register.mjs src/cli.ts",
     "test": "vitest run",

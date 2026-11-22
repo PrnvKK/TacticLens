@@ -1,0 +1,58 @@
+name: Feature request
+description: Suggest a new graphic, measurement, integration or workflow.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        TacticLens keeps a deliberate split: the code measures the match and
+        Kimi chooses from what is valid. Explain which side your idea belongs
+        to and what facts or measurements it needs.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What is missing or awkward today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the behaviour you would like to see.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Overlay / Theatre page
+        - Detection, tracking or teams
+        - Engine (possession, events, formations)
+        - Kimi director or commentary
+        - Telegram bridge
+        - OpenClaw analyst / MCP
+        - Model export or build
+        - Replay or fixtures
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any simpler approach, existing tool, or workaround?
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for a similar request.
+          required: true
+        - label: This request does not require committing third-party weights or match footage.
+          required: true
