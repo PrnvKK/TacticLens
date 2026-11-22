@@ -1,6 +1,6 @@
 # TacticLens
 
-A live tactical overlay for football video. A Chrome (MV3) extension tracks the players and the ball, works out possession, formations and pass options, and draws them over the match together with short analyst cards. Detection runs locally in the browser (YOLO models through onnxruntime-web on WebGPU); the commentary is written by Kimi through the Cerebras API. Built for a Cerebras x Kimi hackathon.
+A live tactical overlay for football video, with an analyst that texts you. A Chrome (MV3) extension tracks the players and the ball, works out possession, formations and pass options, and draws them over the match together with short analyst cards. Detection runs locally in the browser (YOLO models through onnxruntime-web on WebGPU); the commentary is written by Kimi through the Cerebras API. While you watch, TacticLens also pings you on Telegram with the live read, and an OpenClaw analyst agent (Kimi on Cerebras) answers your questions there. Built for the Cerebras x Kimi x OpenClaw 2026 hackathon.
 
 ## Screenshots
 
@@ -13,12 +13,28 @@ A live tactical overlay for football video. A Chrome (MV3) extension tracks the 
 ```
 video frame -> brain (YOLO ONNX, tracking, teams, scene) -> core engine (possession, events)
             -> director / LLM lanes (Kimi on Cerebras) -> overlay
+                                  |
+                                  +-> local bridge (127.0.0.1:8787) -> Telegram pings
+                                                                    <-> OpenClaw analyst (MCP tools)
 ```
 
 - The brain page samples the video, runs the person and ball detectors on WebGPU, then tracks, assigns teams and classifies the shot type.
 - `core/` turns tracks into possession, passes, pressing, overloads and formation changes. It is plain TypeScript with no DOM and runs the same in the browser and in Node.
 - The director lanes send Kimi a compact match state; Kimi chooses the callouts and graphics and writes the short commentary lines, and the overlay draws them.
 - Requests carry that tracking summary, not video. A pause-and-ask question (and an opt-in vision lane) also sends an annotated frame to the provider.
+
+## Telegram pings and the OpenClaw analyst
+
+TacticLens does not stop at the screen. A small local bridge (`tools/bridge`, loopback only) carries the match to your phone:
+
+- **Live pings.** After about 10 seconds of live play the bridge texts you the latest line from the Theatre side chat on Telegram, then keeps going on that cadence. Pings pause during replays, close-ups, pauses, half-time and long ball-absence, because only the extension knows when play is live. By default a ping forwards the line already on screen, so it costs no extra model call.
+- **Ask from Telegram.** Reply with a question and an OpenClaw agent on Kimi via Cerebras answers in a few sentences. It reads the live match through six MCP tools served by the bridge (`get_live_state`, `get_events_since`, `get_match_memory`, `get_latest_snapshot`, `request_graphic`, `record_update`), including the latest annotated snapshot of the video and overlay.
+- **Telegram can draw on the screen.** The agent can request a graphic with `request_graphic`; it only appears in the Theatre after the same validator and calm gate as the on-screen director.
+- **Let OpenClaw write the pings.** `BRIDGE_PING_MODE=agent` makes OpenClaw write every proactive update instead of mirroring the screen.
+
+To try it: put `BRIDGE_TOKEN`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env`, rebuild the extension, run `pnpm bridge`, then tick "Telegram live bridge" in the toolbar popup (or open the Theatre with `?bridge=1`) and play a clip. The OpenClaw side (Telegram pairing, MCP server registration, inbound webhook) is described in `tools/bridge/README.md`. `pnpm bridge:dry` replays a recorded session through the analyst prompt on Cerebras without Telegram or OpenClaw, to check the wiring (needs `CEREBRAS_API_KEY` and `CEREBRAS_KIMI_MODEL`).
+
+The bridge exposes only the match state and the snapshot you choose to send: enable it only when you are comfortable sending that frame to your model and your Telegram chat.
 
 ## Prerequisites
 
@@ -68,7 +84,7 @@ No test clip ships with the repo. Use any football match video you have the righ
    - Open `chrome-extension://<extension-id>/theatre.html`; the id is shown on the extension's card at `chrome://extensions`.
    - Click "Choose a video" (or drop a file on the page) and select a match clip. The overlay and the side chat start with playback. Under "Tools" the Source selector switches between Broadcast, Game and Auto footage. Shortcuts: Space play/pause, F fullscreen, H hide controls, P perf chip.
    - Without a key, "Run the offline demo" on the landing page plays a scripted overlay; the commentary and ask features need the key.
-8. Optional: `pnpm bridge` starts a local HTTP/MCP hub on `127.0.0.1:8787` that forwards match state to a Telegram analyst; see `tools/bridge/README.md` and the optional variables in `.env.example`. Turn on "Telegram live bridge" in the popup to feed it.
+8. Optional, Telegram and OpenClaw: set the bridge variables from `.env.example`, rebuild, run `pnpm bridge` and turn on "Telegram live bridge" in the popup (see "Telegram pings and the OpenClaw analyst" above and `tools/bridge/README.md`).
 
 The toolbar's "Toggle overlay on this tab" button puts a status badge on a page's video and starts the brain there. The full overlay lives in the Theatre page, which also covers local files and DRM-protected sources the page cannot capture.
 
@@ -81,7 +97,7 @@ The toolbar's "Toggle overlay on this tab" button puts a status badge on a page'
 | `fixtures/` | Recorded and synthetic sessions as JSONL, with ground-truth labels. |
 | `models/` | Export script, requirements and notes for the ONNX models. |
 | `tools/replay/` | Replay a session through the engine (`pnpm replay`, `pnpm replay:gen`). |
-| `tools/bridge/` | Optional local state hub for a Telegram analyst (`pnpm bridge`, `pnpm bridge:dry`). |
+| `tools/bridge/` | Local hub that pings Telegram and serves the match to the OpenClaw analyst over MCP (`pnpm bridge`, `pnpm bridge:dry`). |
 | `tools/llm/`, `tools/director-live.ts` | Kimi calibration and soak scripts (`pnpm llm:calibrate`, `pnpm llm:soak`) and a live director smoke test (`pnpm director:live`). They make real API calls and need `CEREBRAS_API_KEY` and `CEREBRAS_KIMI_MODEL` in `.env`. |
 
 ## Models and licences
