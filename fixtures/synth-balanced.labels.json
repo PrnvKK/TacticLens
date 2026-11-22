@@ -1,0 +1,51 @@
+{
+  "fixture": "synth-balanced",
+  "source": "synthetic",
+  "durationS": 100,
+  "possession": {
+    "A": 57.9,
+    "B": 42.1
+  },
+  "turnovers": [
+    {
+      "t": 20.32,
+      "to": "B"
+    },
+    {
+      "t": 40.75,
+      "to": "A"
+    },
+    {
+      "t": 62.15,
+      "to": "B"
+    },
+    {
+      "t": 82.06,
+      "to": "A"
+    }
+  ],
+  "absent": [
+    [
+      28,
+      32
+    ],
+    [
+      66,
+      69
+    ]
+  ],
+  "replay": [
+    [
+      46,
+      54
+    ]
+  ],
+  "close": [
+    [
+      86,
+      90
+    ]
+  ],
+  "calibratedAtS": 1.5,
+  "note": "Possession truth excludes replay, close-up, ball-absent time and calibration. Turnover t is the scheduled arrival at the new holder; the engine confirms ~0.5 s later."
+}
