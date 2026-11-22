@@ -1,0 +1,23 @@
+{
+  "name": "tacticlens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TacticLens: live tactical overlay for football video, as a Chrome MV3 extension",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter extension dev",
+    "build": "pnpm --filter extension build",
+    "test": "pnpm -r --if-present test",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "replay": "node --no-warnings --experimental-transform-types --import ./tools/replay/register.mjs tools/replay/cli.ts",
+    "replay:gen": "node --no-warnings --experimental-transform-types --import ./tools/replay/register.mjs tools/replay/gen-fixtures.ts",
+    "director:live": "node --no-warnings --experimental-transform-types --import ./tools/replay/register.mjs tools/director-live.ts",
+    "bridge": "node --no-warnings --experimental-transform-types --import ./tools/replay/register.mjs tools/bridge/src/cli.ts",
+    "bridge:dry": "node --no-warnings --experimental-transform-types --import ./tools/replay/register.mjs tools/bridge/src/cli.ts --dry",
+    "llm:calibrate": "node --no-warnings --experimental-transform-types --import ./tools/replay/register.mjs tools/llm/calibrate.ts",
+    "llm:soak": "node --no-warnings --experimental-transform-types --import ./tools/replay/register.mjs tools/llm/soak.ts"
+  }
+}

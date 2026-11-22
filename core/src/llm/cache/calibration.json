@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "blockSize": 1024,
+  "measuredAt": "2026-11-22T07:45:00.000Z",
+  "models": {
+    "moonshotai-kimi-k3.1-pro-trial": {
+      "charsPerToken": 3.72,
+      "imageTokens": {
+        "w768": 456,
+        "w512": 217
+      },
+      "ttftMs": {
+        "cold": 2400,
+        "warm": 700
+      },
+      "cacheBlockTokens": 1024,
+      "prompts": {
+        "686b1cee": {
+          "sharedChars": 7638,
+          "sharedTokens": 2100,
+          "lanes": {
+            "director": {
+              "segChars": 4286,
+              "tokens": 3122
+            },
+            "watch": {
+              "segChars": 4489,
+              "tokens": 3122
+            }
+          }
+        },
+        "b1e6245e": {
+          "sharedChars": 7988,
+          "sharedTokens": 2147,
+          "lanes": {
+            "director": {
+              "segChars": 3994,
+              "tokens": 3221
+            },
+            "watch": {
+              "segChars": 3994,
+              "tokens": 3221
+            }
+          }
+        },
+        "10d48737": {
+          "sharedChars": 7988,
+          "sharedTokens": 2147,
+          "lanes": {
+            "director": {
+              "segChars": 3994,
+              "tokens": 3221
+            },
+            "watch": {
+              "segChars": 3994,
+              "tokens": 3221
+            }
+          }
+        }
+      }
+    }
+  }
+}

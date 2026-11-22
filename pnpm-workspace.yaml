@@ -1,0 +1,7 @@
+packages:
+  - extension
+  - core
+  - tools/bridge
+
+allowBuilds:
+  protobufjs: true

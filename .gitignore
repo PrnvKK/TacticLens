@@ -1,0 +1,33 @@
+# Dependencies and build output
+node_modules/
+.output/
+.wxt/
+dist/
+coverage/
+
+# Secrets (keep the template)
+.env
+.env.*
+!.env.example
+
+# Models: Python env, downloaded weights and exported ONNX stay local (see models/README.md)
+models/.venv/
+models/weights/
+models/onnx/
+*.onnx
+__pycache__/
+
+# Generated copies of models and ONNX Runtime files
+extension/public/ort/
+extension/public/models/
+
+# Written by the tools at run time
+.snapshots/
+tools/llm/soak-result.json
+
+# Logs, OS and editor files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
