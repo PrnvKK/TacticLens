@@ -1,0 +1,20 @@
+{
+  "name": "@tacticlens/bridge",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local TacticLens -> OpenClaw state, snapshot and MCP bridge",
+  "scripts": {
+    "start": "node --no-warnings --experimental-transform-types --import ../replay/register.mjs src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tacticlens/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
